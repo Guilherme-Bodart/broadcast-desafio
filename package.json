@@ -1,0 +1,12 @@
+{
+  "name": "broadcast-desafio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:web && npm run build:functions",
+    "build:web": "npm --prefix web run build",
+    "build:functions": "npm --prefix functions run build",
+    "dev:web": "npm --prefix web run dev --",
+    "deploy": "firebase deploy"
+  }
+}
