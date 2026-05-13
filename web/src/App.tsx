@@ -1,121 +1,82 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import CloudQueueIcon from '@mui/icons-material/CloudQueue'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined'
+import {
+  Box,
+  Button,
+  Chip,
+  Container,
+  Divider,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const setupItems = [
+    'Firebase SDK configurado',
+    'Material UI instalado',
+    'Tailwind CSS ativo',
+  ]
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Box className="min-h-screen bg-slate-50 py-8">
+      <Container maxWidth="lg">
+        <Stack spacing={3}>
+          <Box>
+            <Chip
+              color="primary"
+              icon={<CloudQueueIcon />}
+              label="Ambiente configurado"
+              variant="outlined"
+            />
+            <Typography component="h1" variant="h3" className="mt-4">
+              Broadcast
+            </Typography>
+            <Typography color="text.secondary" className="mt-2 max-w-2xl">
+              Base do SaaS pronta para autenticação, conexões, contatos e
+              mensagens em tempo real.
+            </Typography>
+          </Box>
 
-      <div className="ticks"></div>
+          <Paper variant="outlined" className="p-6">
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              divider={<Divider flexItem orientation="vertical" />}
+              spacing={3}
+            >
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                <LockOutlinedIcon color="primary" />
+                <Typography component="h2" variant="h6">
+                  Próximo passo: autenticação
+                </Typography>
+                <Typography color="text.secondary">
+                  O commit seguinte cria login, cadastro, logout e rotas
+                  protegidas usando Firebase Auth.
+                </Typography>
+                <Button startIcon={<SendOutlinedIcon />} variant="contained">
+                  Preparado para continuar
+                </Button>
+              </Stack>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+              <Stack spacing={1.5} sx={{ flex: 1 }}>
+                {setupItems.map((item) => (
+                  <Box
+                    className="flex items-center gap-2"
+                    component="div"
+                    key={item}
+                  >
+                    <CheckCircleOutlinedIcon color="success" fontSize="small" />
+                    <Typography>{item}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          </Paper>
+        </Stack>
+      </Container>
+    </Box>
   )
 }
 
