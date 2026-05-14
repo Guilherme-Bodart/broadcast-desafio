@@ -44,7 +44,28 @@ type DialogState =
     }
   | null
 
-const phonePattern = /^[0-9()+\-\s]{8,20}$/
+const phoneDigitsLength = 11
+
+const getPhoneDigits = (value: string) =>
+  value.replace(/\D/g, '').slice(0, phoneDigitsLength)
+
+const formatPhone = (value: string) => {
+  const digits = getPhoneDigits(value)
+
+  if (!digits) {
+    return ''
+  }
+
+  if (digits.length <= 2) {
+    return `(${digits}`
+  }
+
+  if (digits.length <= 7) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  }
+
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
 
 export function ContactsSection({ connection, userId }: ContactsSectionProps) {
   const { contacts, createContact, deleteContact, error, loading, updateContact } =
@@ -70,7 +91,7 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
   function openEditDialog(contact: Contact) {
     setFormError('')
     setName(contact.name)
-    setPhone(contact.phone)
+    setPhone(formatPhone(contact.phone))
     setDialogState({ mode: 'edit', contact })
   }
 
@@ -89,15 +110,15 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
     event.preventDefault()
 
     const contactName = name.trim()
-    const contactPhone = phone.trim()
+    const contactPhone = formatPhone(phone)
 
     if (!contactName) {
       setFormError('Informe o nome do contato.')
       return
     }
 
-    if (!phonePattern.test(contactPhone)) {
-      setFormError('Informe um telefone válido.')
+    if (getPhoneDigits(contactPhone).length !== phoneDigitsLength) {
+      setFormError('Informe DDD e 9 dígitos.')
       return
     }
 
@@ -211,7 +232,7 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
                     >
                       <PhoneIcon fontSize="small" />
                       <Typography color="text.secondary" variant="body2">
-                        {contact.phone}
+                        {formatPhone(contact.phone)}
                       </Typography>
                     </Stack>
                   </Box>
@@ -264,9 +285,15 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
               <TextField
                 fullWidth
                 label="Telefone"
-                onChange={(event) => setPhone(event.target.value)}
+                onChange={(event) => setPhone(formatPhone(event.target.value))}
                 placeholder="(11) 99999-9999"
                 required
+                slotProps={{
+                  htmlInput: {
+                    inputMode: 'numeric',
+                    maxLength: 15,
+                  },
+                }}
                 value={phone}
               />
             </Stack>

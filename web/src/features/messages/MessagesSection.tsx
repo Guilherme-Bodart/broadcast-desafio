@@ -447,6 +447,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
                   />
                 }
                 label="Agendar mensagem"
+                sx={{ alignSelf: 'flex-start' }}
               />
 
               {scheduleEnabled ? (

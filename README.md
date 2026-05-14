@@ -35,6 +35,8 @@ O projeto deve ser feito com React e TypeScript, usando Firebase Auth, Firestore
 8. Não usar subcoleções no Firestore.
 9. Separar as funções em uma pasta `functions` e o frontend em outra pasta chamada `web`.
 
+O README foi escrito com apoio de IA. Usei a ferramenta para revisar o código e gerar uma documentação mais completa, depois validei e ajustei o texto para refletir a implementação.
+
 ## Status da implementação
 
 - Autenticação com Firebase Auth implementada com login, cadastro, nome do usuário e logout.
