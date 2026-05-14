@@ -1,24 +1,9 @@
 import CloudQueueIcon from '@mui/icons-material/CloudQueue'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import LogoutIcon from '@mui/icons-material/Logout'
-import {
-  AppBar,
-  Box,
-  Button,
-  Chip,
-  Container,
-  Paper,
-  Stack,
-  Toolbar,
-  Typography,
-} from '@mui/material'
+import { AppBar, Box, Button, Chip, Container, Stack, Toolbar, Typography } from '@mui/material'
+import { ConnectionsSection } from '../features/connections/ConnectionsSection'
 import { useAuth } from '../features/auth/useAuth'
-
-const nextFeatures = [
-  'CRUD de conexões em tempo real',
-  'Contatos por conexão',
-  'Mensagens enviadas e agendadas',
-]
 
 export function DashboardPage() {
   const { signOutUser, user } = useAuth()
@@ -56,21 +41,7 @@ export function DashboardPage() {
             </Typography>
           </Box>
 
-          <Paper className="p-6" variant="outlined">
-            <Typography component="h3" variant="h6">
-              Próximas entregas
-            </Typography>
-            <Stack className="mt-4" spacing={1.5}>
-              {nextFeatures.map((feature) => (
-                <Box
-                  className="rounded border border-slate-200 bg-white px-4 py-3"
-                  key={feature}
-                >
-                  <Typography>{feature}</Typography>
-                </Box>
-              ))}
-            </Stack>
-          </Paper>
+          {user ? <ConnectionsSection userId={user.uid} /> : null}
         </Stack>
       </Container>
     </Box>

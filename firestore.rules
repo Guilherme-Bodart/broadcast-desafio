@@ -2,6 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && data.userId == request.auth.uid;
+    }
+
+    function hasValidConnectionData(data) {
+      return data.keys().hasAll(['userId', 'name', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'name', 'createdAt', 'updatedAt'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 80;
+    }
+
+    match /connections/{connectionId} {
+      allow read: if isOwner(resource.data);
+      allow create: if isOwner(request.resource.data)
+        && hasValidConnectionData(request.resource.data);
+      allow update: if isOwner(resource.data)
+        && isOwner(request.resource.data)
+        && resource.data.userId == request.resource.data.userId
+        && resource.data.createdAt == request.resource.data.createdAt
+        && hasValidConnectionData(request.resource.data);
+      allow delete: if isOwner(resource.data);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
