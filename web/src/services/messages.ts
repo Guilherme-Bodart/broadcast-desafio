@@ -116,3 +116,12 @@ export async function updateMessage(messageId: string, input: MessageInput) {
 export async function deleteMessage(messageId: string) {
   await deleteDoc(doc(db, 'messages', messageId))
 }
+
+export async function markMessageAsSent(messageId: string) {
+  await updateDoc(doc(db, 'messages', messageId), {
+    status: 'sent',
+    scheduledAt: null,
+    sentAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}

@@ -4,7 +4,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import HubIcon from '@mui/icons-material/Hub'
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked'
 import WifiTetheringIcon from '@mui/icons-material/WifiTethering'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import {
   Alert,
   Box,
@@ -78,6 +78,20 @@ export function ConnectionsSection({
   const dialogTitle =
     dialogState?.mode === 'edit' ? 'Editar conexão' : 'Nova conexão'
 
+  useEffect(() => {
+    if (connections.length === 0) {
+      return
+    }
+
+    const selectedConnectionExists = connections.some(
+      (connection) => connection.id === selectedConnectionId,
+    )
+
+    if (!selectedConnectionExists) {
+      onSelectConnection(connections[0])
+    }
+  }, [connections, onSelectConnection, selectedConnectionId])
+
   function openCreateDialog() {
     setFormError('')
     setConnectionName('')
@@ -121,8 +135,13 @@ export function ConnectionsSection({
       }
 
       closeDialog()
-    } catch {
-      setFormError('Não foi possível salvar a conexão.')
+    } catch (saveError) {
+      const message =
+        saveError instanceof Error
+          ? saveError.message
+          : 'Não foi possível salvar a conexão.'
+
+      setFormError(message)
     } finally {
       setSubmitting(false)
     }
@@ -176,7 +195,7 @@ export function ConnectionsSection({
 
         {error ? (
           <Alert className="mt-4" severity="error">
-            Não foi possível carregar as conexões.
+            Não foi possível carregar as conexões: {error}
           </Alert>
         ) : null}
 

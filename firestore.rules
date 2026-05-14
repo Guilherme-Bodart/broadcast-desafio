@@ -10,6 +10,21 @@ service cloud.firestore {
       return isSignedIn() && data.userId == request.auth.uid;
     }
 
+    function hasValidTimestamps(data) {
+      return data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function keepsBaseFields(resourceData, requestData) {
+      return resourceData.userId == requestData.userId
+        && resourceData.createdAt == requestData.createdAt;
+    }
+
+    function keepsConnectionScope(resourceData, requestData) {
+      return keepsBaseFields(resourceData, requestData)
+        && resourceData.connectionId == requestData.connectionId;
+    }
+
     function ownsConnection(connectionId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/connections/$(connectionId))
@@ -21,7 +36,8 @@ service cloud.firestore {
         && data.keys().hasOnly(['userId', 'name', 'createdAt', 'updatedAt'])
         && data.name is string
         && data.name.size() > 0
-        && data.name.size() <= 80;
+        && data.name.size() <= 80
+        && hasValidTimestamps(data);
     }
 
     function hasValidContactData(data) {
@@ -33,7 +49,8 @@ service cloud.firestore {
         && data.name.size() <= 120
         && data.phone is string
         && data.phone.size() >= 8
-        && data.phone.size() <= 20;
+        && data.phone.size() <= 20
+        && hasValidTimestamps(data);
     }
 
     function hasValidMessageData(data) {
@@ -49,6 +66,7 @@ service cloud.firestore {
         && data.status in ['scheduled', 'sent']
         && (data.scheduledAt == null || data.scheduledAt is timestamp)
         && (data.sentAt == null || data.sentAt is timestamp)
+        && hasValidTimestamps(data)
         && ((data.status == 'scheduled' && data.scheduledAt is timestamp && data.sentAt == null)
           || (data.status == 'sent' && data.scheduledAt == null && data.sentAt is timestamp));
     }
@@ -59,8 +77,7 @@ service cloud.firestore {
         && hasValidConnectionData(request.resource.data);
       allow update: if isOwner(resource.data)
         && isOwner(request.resource.data)
-        && resource.data.userId == request.resource.data.userId
-        && resource.data.createdAt == request.resource.data.createdAt
+        && keepsBaseFields(resource.data, request.resource.data)
         && hasValidConnectionData(request.resource.data);
       allow delete: if isOwner(resource.data);
     }
@@ -72,9 +89,7 @@ service cloud.firestore {
         && hasValidContactData(request.resource.data);
       allow update: if isOwner(resource.data)
         && isOwner(request.resource.data)
-        && resource.data.userId == request.resource.data.userId
-        && resource.data.connectionId == request.resource.data.connectionId
-        && resource.data.createdAt == request.resource.data.createdAt
+        && keepsConnectionScope(resource.data, request.resource.data)
         && ownsConnection(request.resource.data.connectionId)
         && hasValidContactData(request.resource.data);
       allow delete: if isOwner(resource.data)
@@ -88,9 +103,7 @@ service cloud.firestore {
         && hasValidMessageData(request.resource.data);
       allow update: if isOwner(resource.data)
         && isOwner(request.resource.data)
-        && resource.data.userId == request.resource.data.userId
-        && resource.data.connectionId == request.resource.data.connectionId
-        && resource.data.createdAt == request.resource.data.createdAt
+        && keepsConnectionScope(resource.data, request.resource.data)
         && ownsConnection(request.resource.data.connectionId)
         && hasValidMessageData(request.resource.data);
       allow delete: if isOwner(resource.data)

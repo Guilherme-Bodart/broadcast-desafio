@@ -34,8 +34,9 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useContacts } from '../contacts/useContacts'
+import { markMessageAsSent } from '../../services/messages'
 import type { Connection } from '../../types/connection'
 import type { Message, MessageStatus } from '../../types/message'
 import { useMessages } from './useMessages'
@@ -78,6 +79,9 @@ const formatTimestamp = (value: Message['createdAt'] | null) => {
   }).format(date)
 }
 
+const getMessageCounterText = (count: number) =>
+  count === 1 ? '1 mensagem' : `${count} mensagens`
+
 export function MessagesSection({ connection, userId }: MessagesSectionProps) {
   const {
     messages,
@@ -97,6 +101,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const processingDueMessageIds = useRef(new Set<string>())
 
   const contactNameById = useMemo(
     () => new Map(contacts.map((contact) => [contact.id, contact.name])),
@@ -108,6 +113,35 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
   const isDialogOpen = Boolean(dialogState)
   const dialogTitle =
     dialogState?.mode === 'edit' ? 'Editar mensagem' : 'Nova mensagem'
+
+  useEffect(() => {
+    const markDueMessagesAsSent = () => {
+      const now = Date.now()
+      const dueMessages = messages.filter((message) => {
+        const scheduledTime = message.scheduledAt?.toMillis?.()
+
+        return (
+          message.status === 'scheduled' &&
+          typeof scheduledTime === 'number' &&
+          scheduledTime <= now &&
+          !processingDueMessageIds.current.has(message.id)
+        )
+      })
+
+      dueMessages.forEach((message) => {
+        processingDueMessageIds.current.add(message.id)
+
+        void markMessageAsSent(message.id).finally(() => {
+          processingDueMessageIds.current.delete(message.id)
+        })
+      })
+    }
+
+    markDueMessagesAsSent()
+    const intervalId = window.setInterval(markDueMessagesAsSent, 10000)
+
+    return () => window.clearInterval(intervalId)
+  }, [messages])
 
   function openCreateDialog() {
     setText('')
@@ -267,7 +301,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
           </ToggleButtonGroup>
 
           <Typography color="text.secondary" variant="body2">
-            {filteredMessages.length} mensagem(ns)
+            {getMessageCounterText(filteredMessages.length)}
           </Typography>
         </Stack>
 
@@ -415,6 +449,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
                   label="Data e horário"
                   onChange={(event) => setScheduledAt(event.target.value)}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
                   type="datetime-local"
                   value={scheduledAt}
                 />
