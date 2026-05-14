@@ -2,11 +2,15 @@ import CloudQueueIcon from '@mui/icons-material/CloudQueue'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { AppBar, Box, Button, Chip, Container, Stack, Toolbar, Typography } from '@mui/material'
+import { useState } from 'react'
+import { ContactsSection } from '../features/contacts/ContactsSection'
 import { ConnectionsSection } from '../features/connections/ConnectionsSection'
 import { useAuth } from '../features/auth/useAuth'
+import type { Connection } from '../types/connection'
 
 export function DashboardPage() {
   const { signOutUser, user } = useAuth()
+  const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null)
 
   return (
     <Box className="min-h-screen bg-slate-50">
@@ -41,7 +45,32 @@ export function DashboardPage() {
             </Typography>
           </Box>
 
-          {user ? <ConnectionsSection userId={user.uid} /> : null}
+          {user ? (
+            <>
+              <ConnectionsSection
+                onSelectConnection={setSelectedConnection}
+                selectedConnectionId={selectedConnection?.id ?? ''}
+                userId={user.uid}
+              />
+
+              {selectedConnection ? (
+                <ContactsSection
+                  connection={selectedConnection}
+                  key={selectedConnection.id}
+                  userId={user.uid}
+                />
+              ) : (
+                <Box className="rounded border border-dashed border-slate-300 bg-white p-6">
+                  <Typography component="h3" variant="h6">
+                    Selecione uma conexão
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Escolha uma conexão acima para gerenciar os contatos dela.
+                  </Typography>
+                </Box>
+              )}
+            </>
+          ) : null}
         </Stack>
       </Container>
     </Box>

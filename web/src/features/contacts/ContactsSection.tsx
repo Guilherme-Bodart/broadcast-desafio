@@ -1,9 +1,9 @@
 import AddIcon from '@mui/icons-material/Add'
+import ContactsIcon from '@mui/icons-material/Contacts'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
-import HubIcon from '@mui/icons-material/Hub'
-import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked'
-import WifiTetheringIcon from '@mui/icons-material/WifiTethering'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import PhoneIcon from '@mui/icons-material/Phone'
 import { useState, type FormEvent } from 'react'
 import {
   Alert,
@@ -22,72 +22,53 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import type { Contact } from '../../types/contact'
 import type { Connection } from '../../types/connection'
-import { useConnections } from './useConnections'
+import { useContacts } from './useContacts'
 
-type ConnectionsSectionProps = {
-  onSelectConnection: (connection: Connection) => void
-  selectedConnectionId: string
+type ContactsSectionProps = {
+  connection: Connection
   userId: string
 }
 
 type DialogState =
   | {
       mode: 'create'
-      connection: null
+      contact: null
     }
   | {
       mode: 'edit'
-      connection: Connection
+      contact: Contact
     }
   | null
 
-const formatDate = (connection: Connection) => {
-  const date = connection.createdAt?.toDate?.()
+const phonePattern = /^[0-9()+\-\s]{8,20}$/
 
-  if (!date) {
-    return 'Criada agora'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date)
-}
-
-export function ConnectionsSection({
-  onSelectConnection,
-  selectedConnectionId,
-  userId,
-}: ConnectionsSectionProps) {
-  const {
-    connections,
-    createConnection,
-    deleteConnection,
-    error,
-    loading,
-    updateConnection,
-  } = useConnections(userId)
+export function ContactsSection({ connection, userId }: ContactsSectionProps) {
+  const { contacts, createContact, deleteContact, error, loading, updateContact } =
+    useContacts(userId, connection.id)
   const [dialogState, setDialogState] = useState<DialogState>(null)
-  const [connectionName, setConnectionName] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
 
   const isDialogOpen = Boolean(dialogState)
-  const dialogTitle =
-    dialogState?.mode === 'edit' ? 'Editar conexão' : 'Nova conexão'
+  const dialogTitle = dialogState?.mode === 'edit' ? 'Editar contato' : 'Novo contato'
 
   function openCreateDialog() {
     setFormError('')
-    setConnectionName('')
-    setDialogState({ mode: 'create', connection: null })
+    setName('')
+    setPhone('')
+    setDialogState({ mode: 'create', contact: null })
   }
 
-  function openEditDialog(connection: Connection) {
+  function openEditDialog(contact: Contact) {
     setFormError('')
-    setConnectionName(connection.name)
-    setDialogState({ mode: 'edit', connection })
+    setName(contact.name)
+    setPhone(contact.phone)
+    setDialogState({ mode: 'edit', contact })
   }
 
   function closeDialog() {
@@ -96,17 +77,24 @@ export function ConnectionsSection({
     }
 
     setDialogState(null)
-    setConnectionName('')
+    setName('')
+    setPhone('')
     setFormError('')
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const name = connectionName.trim()
+    const contactName = name.trim()
+    const contactPhone = phone.trim()
 
-    if (!name) {
-      setFormError('Informe o nome da conexão.')
+    if (!contactName) {
+      setFormError('Informe o nome do contato.')
+      return
+    }
+
+    if (!phonePattern.test(contactPhone)) {
+      setFormError('Informe um telefone válido.')
       return
     }
 
@@ -115,32 +103,38 @@ export function ConnectionsSection({
 
     try {
       if (dialogState?.mode === 'edit') {
-        await updateConnection(dialogState.connection.id, { name })
+        await updateContact(dialogState.contact.id, {
+          name: contactName,
+          phone: contactPhone,
+        })
       } else {
-        await createConnection({ name })
+        await createContact({
+          name: contactName,
+          phone: contactPhone,
+        })
       }
 
       closeDialog()
     } catch {
-      setFormError('Não foi possível salvar a conexão.')
+      setFormError('Não foi possível salvar o contato.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  async function handleDelete(connection: Connection) {
+  async function handleDelete(contact: Contact) {
     const shouldDelete = window.confirm(
-      `Excluir a conexão "${connection.name}"? Essa ação não pode ser desfeita.`,
+      `Excluir o contato "${contact.name}"? Essa ação não pode ser desfeita.`,
     )
 
     if (!shouldDelete) {
       return
     }
 
-    setDeletingId(connection.id)
+    setDeletingId(contact.id)
 
     try {
-      await deleteConnection(connection.id)
+      await deleteContact(contact.id)
     } finally {
       setDeletingId('')
     }
@@ -158,10 +152,10 @@ export function ConnectionsSection({
         >
           <Box>
             <Typography component="h3" variant="h6">
-              Conexões
+              Contatos
             </Typography>
             <Typography color="text.secondary">
-              Gerencie os canais deste cliente em tempo real.
+              Contatos da conexão {connection.name}.
             </Typography>
           </Box>
 
@@ -170,84 +164,71 @@ export function ConnectionsSection({
             startIcon={<AddIcon />}
             variant="contained"
           >
-            Nova conexão
+            Novo contato
           </Button>
         </Stack>
 
         {error ? (
           <Alert className="mt-4" severity="error">
-            Não foi possível carregar as conexões.
+            Não foi possível carregar os contatos.
           </Alert>
         ) : null}
 
-        {!loading && connections.length === 0 ? (
+        {!loading && contacts.length === 0 ? (
           <Box className="mt-6 rounded border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <WifiTetheringIcon color="primary" fontSize="large" />
+            <PersonAddIcon color="primary" fontSize="large" />
             <Typography component="p" variant="h6" className="mt-3">
-              Nenhuma conexão cadastrada
+              Nenhum contato cadastrado
             </Typography>
             <Typography color="text.secondary" className="mx-auto mt-1 max-w-md">
-              Crie a primeira conexão para depois vincular contatos e mensagens.
+              Cadastre contatos para depois selecionar destinatários nas mensagens.
             </Typography>
           </Box>
         ) : null}
 
-        {connections.length > 0 ? (
+        {contacts.length > 0 ? (
           <Stack className="mt-5" spacing={1.5}>
-            {connections.map((connection) => (
+            {contacts.map((contact) => (
               <Box
-                className="flex flex-col gap-3 rounded border bg-white p-4 transition sm:flex-row sm:items-center sm:justify-between"
-                key={connection.id}
-                onClick={() => onSelectConnection(connection)}
-                role="button"
-                sx={{
-                  borderColor:
-                    selectedConnectionId === connection.id ? 'primary.main' : 'divider',
-                  cursor: 'pointer',
-                }}
-                tabIndex={0}
+                className="flex flex-col gap-3 rounded border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                key={contact.id}
               >
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                  <Box className="grid h-10 w-10 place-items-center rounded bg-blue-50 text-blue-700">
-                    {selectedConnectionId === connection.id ? (
-                      <RadioButtonCheckedIcon />
-                    ) : (
-                      <HubIcon />
-                    )}
+                  <Box className="grid h-10 w-10 place-items-center rounded bg-teal-50 text-teal-700">
+                    <ContactsIcon />
                   </Box>
                   <Box>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {connection.name}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {formatDate(connection)}
-                    </Typography>
+                    <Typography sx={{ fontWeight: 600 }}>{contact.name}</Typography>
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      sx={{ alignItems: 'center', color: 'text.secondary' }}
+                    >
+                      <PhoneIcon fontSize="small" />
+                      <Typography color="text.secondary" variant="body2">
+                        {contact.phone}
+                      </Typography>
+                    </Stack>
                   </Box>
                 </Stack>
 
                 <Stack direction="row" spacing={1}>
                   <Tooltip title="Editar">
                     <IconButton
-                      aria-label={`Editar ${connection.name}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        openEditDialog(connection)
-                      }}
+                      aria-label={`Editar ${contact.name}`}
+                      onClick={() => openEditDialog(contact)}
                     >
                       <EditIcon />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Excluir">
                     <IconButton
-                      aria-label={`Excluir ${connection.name}`}
+                      aria-label={`Excluir ${contact.name}`}
                       color="error"
-                      disabled={deletingId === connection.id}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void handleDelete(connection)
-                      }}
+                      disabled={deletingId === contact.id}
+                      onClick={() => void handleDelete(contact)}
                     >
-                      {deletingId === connection.id ? (
+                      {deletingId === contact.id ? (
                         <CircularProgress color="inherit" size={20} />
                       ) : (
                         <DeleteIcon />
@@ -271,9 +252,17 @@ export function ConnectionsSection({
                 autoFocus
                 fullWidth
                 label="Nome"
-                onChange={(event) => setConnectionName(event.target.value)}
+                onChange={(event) => setName(event.target.value)}
                 required
-                value={connectionName}
+                value={name}
+              />
+              <TextField
+                fullWidth
+                label="Telefone"
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="(11) 99999-9999"
+                required
+                value={phone}
               />
             </Stack>
           </DialogContent>

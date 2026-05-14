@@ -10,12 +10,30 @@ service cloud.firestore {
       return isSignedIn() && data.userId == request.auth.uid;
     }
 
+    function ownsConnection(connectionId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/connections/$(connectionId))
+        && get(/databases/$(database)/documents/connections/$(connectionId)).data.userId == request.auth.uid;
+    }
+
     function hasValidConnectionData(data) {
       return data.keys().hasAll(['userId', 'name', 'createdAt', 'updatedAt'])
         && data.keys().hasOnly(['userId', 'name', 'createdAt', 'updatedAt'])
         && data.name is string
         && data.name.size() > 0
         && data.name.size() <= 80;
+    }
+
+    function hasValidContactData(data) {
+      return data.keys().hasAll(['userId', 'connectionId', 'name', 'phone', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'connectionId', 'name', 'phone', 'createdAt', 'updatedAt'])
+        && data.connectionId is string
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.phone is string
+        && data.phone.size() >= 8
+        && data.phone.size() <= 20;
     }
 
     match /connections/{connectionId} {
@@ -28,6 +46,22 @@ service cloud.firestore {
         && resource.data.createdAt == request.resource.data.createdAt
         && hasValidConnectionData(request.resource.data);
       allow delete: if isOwner(resource.data);
+    }
+
+    match /contacts/{contactId} {
+      allow read: if isOwner(resource.data);
+      allow create: if isOwner(request.resource.data)
+        && ownsConnection(request.resource.data.connectionId)
+        && hasValidContactData(request.resource.data);
+      allow update: if isOwner(resource.data)
+        && isOwner(request.resource.data)
+        && resource.data.userId == request.resource.data.userId
+        && resource.data.connectionId == request.resource.data.connectionId
+        && resource.data.createdAt == request.resource.data.createdAt
+        && ownsConnection(request.resource.data.connectionId)
+        && hasValidContactData(request.resource.data);
+      allow delete: if isOwner(resource.data)
+        && ownsConnection(resource.data.connectionId);
     }
 
     match /{document=**} {
