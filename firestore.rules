@@ -36,6 +36,23 @@ service cloud.firestore {
         && data.phone.size() <= 20;
     }
 
+    function hasValidMessageData(data) {
+      return data.keys().hasAll(['userId', 'connectionId', 'contactIds', 'text', 'status', 'scheduledAt', 'sentAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'connectionId', 'contactIds', 'text', 'status', 'scheduledAt', 'sentAt', 'createdAt', 'updatedAt'])
+        && data.connectionId is string
+        && data.contactIds is list
+        && data.contactIds.size() > 0
+        && data.contactIds.size() <= 500
+        && data.text is string
+        && data.text.size() > 0
+        && data.text.size() <= 1000
+        && data.status in ['scheduled', 'sent']
+        && (data.scheduledAt == null || data.scheduledAt is timestamp)
+        && (data.sentAt == null || data.sentAt is timestamp)
+        && ((data.status == 'scheduled' && data.scheduledAt is timestamp && data.sentAt == null)
+          || (data.status == 'sent' && data.scheduledAt == null && data.sentAt is timestamp));
+    }
+
     match /connections/{connectionId} {
       allow read: if isOwner(resource.data);
       allow create: if isOwner(request.resource.data)
@@ -60,6 +77,22 @@ service cloud.firestore {
         && resource.data.createdAt == request.resource.data.createdAt
         && ownsConnection(request.resource.data.connectionId)
         && hasValidContactData(request.resource.data);
+      allow delete: if isOwner(resource.data)
+        && ownsConnection(resource.data.connectionId);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isOwner(resource.data);
+      allow create: if isOwner(request.resource.data)
+        && ownsConnection(request.resource.data.connectionId)
+        && hasValidMessageData(request.resource.data);
+      allow update: if isOwner(resource.data)
+        && isOwner(request.resource.data)
+        && resource.data.userId == request.resource.data.userId
+        && resource.data.connectionId == request.resource.data.connectionId
+        && resource.data.createdAt == request.resource.data.createdAt
+        && ownsConnection(request.resource.data.connectionId)
+        && hasValidMessageData(request.resource.data);
       allow delete: if isOwner(resource.data)
         && ownsConnection(resource.data.connectionId);
     }

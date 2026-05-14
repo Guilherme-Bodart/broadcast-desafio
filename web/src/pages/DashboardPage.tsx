@@ -5,6 +5,7 @@ import { AppBar, Box, Button, Chip, Container, Stack, Toolbar, Typography } from
 import { useState } from 'react'
 import { ContactsSection } from '../features/contacts/ContactsSection'
 import { ConnectionsSection } from '../features/connections/ConnectionsSection'
+import { MessagesSection } from '../features/messages/MessagesSection'
 import { useAuth } from '../features/auth/useAuth'
 import type { Connection } from '../types/connection'
 
@@ -54,11 +55,18 @@ export function DashboardPage() {
               />
 
               {selectedConnection ? (
-                <ContactsSection
-                  connection={selectedConnection}
-                  key={selectedConnection.id}
-                  userId={user.uid}
-                />
+                <>
+                  <ContactsSection
+                    connection={selectedConnection}
+                    key={selectedConnection.id}
+                    userId={user.uid}
+                  />
+                  <MessagesSection
+                    connection={selectedConnection}
+                    key={`${selectedConnection.id}-messages`}
+                    userId={user.uid}
+                  />
+                </>
               ) : (
                 <Box className="rounded border border-dashed border-slate-300 bg-white p-6">
                   <Typography component="h3" variant="h6">
