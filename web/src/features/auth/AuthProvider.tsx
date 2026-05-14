@@ -4,6 +4,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
   type User,
 } from 'firebase/auth'
 import { auth } from '../../lib/firebase'
@@ -33,8 +34,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password)
       },
-      signUp: async (email: string, password: string) => {
-        await createUserWithEmailAndPassword(auth, email, password)
+      signUp: async (name: string, email: string, password: string) => {
+        const credential = await createUserWithEmailAndPassword(auth, email, password)
+
+        await updateProfile(credential.user, {
+          displayName: name,
+        })
+
+        setUser({ ...credential.user })
       },
       signOutUser: async () => {
         await signOut(auth)

@@ -1,8 +1,9 @@
 import CloudQueueIcon from '@mui/icons-material/CloudQueue'
-import DashboardIcon from '@mui/icons-material/Dashboard'
+import HubIcon from '@mui/icons-material/Hub'
 import LogoutIcon from '@mui/icons-material/Logout'
-import { AppBar, Box, Button, Chip, Container, Stack, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Button, Container, Stack, Toolbar, Typography } from '@mui/material'
 import { useState } from 'react'
+import { EmptyState } from '../components/EmptyState'
 import { ContactsSection } from '../features/contacts/ContactsSection'
 import { ConnectionsSection } from '../features/connections/ConnectionsSection'
 import { MessagesSection } from '../features/messages/MessagesSection'
@@ -12,6 +13,7 @@ import type { Connection } from '../types/connection'
 export function DashboardPage() {
   const { signOutUser, user } = useAuth()
   const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null)
+  const userName = user?.displayName || user?.email || 'usuário'
 
   return (
     <Box className="min-h-screen bg-slate-50">
@@ -35,16 +37,9 @@ export function DashboardPage() {
 
       <Container className="py-8" maxWidth="lg">
         <Stack spacing={3}>
-          <Box>
-            <Chip color="primary" icon={<DashboardIcon />} label="Área autenticada" />
-            <Typography component="h2" variant="h4" className="mt-4">
-              Olá, {user?.email}
-            </Typography>
-            <Typography color="text.secondary" className="mt-2 max-w-2xl">
-              A sessão protegida está funcionando. Agora o projeto pode receber os
-              módulos de conexões, contatos e mensagens com isolamento por usuário.
-            </Typography>
-          </Box>
+          <Typography component="h2" variant="h4" className="mt-4">
+            Olá, {userName}
+          </Typography>
 
           {user ? (
             <>
@@ -68,14 +63,12 @@ export function DashboardPage() {
                   />
                 </>
               ) : (
-                <Box className="rounded border border-dashed border-slate-300 bg-white p-6">
-                  <Typography component="h3" variant="h6">
-                    Selecione uma conexão
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Escolha uma conexão acima para gerenciar os contatos dela.
-                  </Typography>
-                </Box>
+                <EmptyState
+                  className="bg-white"
+                  description="Escolha uma conexão para gerenciar contatos e mensagens."
+                  icon={<HubIcon color="primary" fontSize="large" />}
+                  title="Selecione uma conexão"
+                />
               )}
             </>
           ) : null}

@@ -41,4 +41,34 @@ export const theme = createTheme({
       textTransform: 'none',
     },
   },
+  components: {
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600,
+          '& .MuiChip-icon': {
+            fontSize: 18,
+            marginLeft: 8,
+            marginRight: -2,
+          },
+          '& .MuiChip-label': {
+            paddingLeft: 8,
+            paddingRight: 10,
+          },
+          '&.MuiChip-sizeSmall': {
+            height: 28,
+          },
+          '&.MuiChip-sizeSmall .MuiChip-icon': {
+            fontSize: 17,
+            marginLeft: 8,
+            marginRight: -2,
+          },
+          '&.MuiChip-sizeSmall .MuiChip-label': {
+            paddingLeft: 8,
+            paddingRight: 10,
+          },
+        },
+      },
+    },
+  },
 })

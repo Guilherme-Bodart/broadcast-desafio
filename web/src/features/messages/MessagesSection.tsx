@@ -35,6 +35,8 @@ import {
   type SelectChangeEvent,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { ConfirmDeleteDialog } from '../../components/ConfirmDeleteDialog'
+import { EmptyState } from '../../components/EmptyState'
 import { useContacts } from '../contacts/useContacts'
 import { markMessageAsSent } from '../../services/messages'
 import type { Connection } from '../../types/connection'
@@ -48,13 +50,13 @@ type MessagesSectionProps = {
 
 type DialogState =
   | {
-      mode: 'create'
-      message: null
-    }
+    mode: 'create'
+    message: null
+  }
   | {
-      mode: 'edit'
-      message: Message
-    }
+    mode: 'edit'
+    message: Message
+  }
   | null
 
 type MessageFilter = 'all' | MessageStatus
@@ -101,6 +103,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null)
   const processingDueMessageIds = useRef(new Set<string>())
 
   const contactNameById = useMemo(
@@ -232,19 +235,24 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
     }
   }
 
-  async function handleDelete(message: Message) {
-    const shouldDelete = window.confirm(
-      'Excluir esta mensagem? Essa ação não pode ser desfeita.',
-    )
-
-    if (!shouldDelete) {
+  function closeDeleteDialog() {
+    if (deletingId) {
       return
     }
 
-    setDeletingId(message.id)
+    setMessageToDelete(null)
+  }
+
+  async function handleDelete() {
+    if (!messageToDelete) {
+      return
+    }
+
+    setDeletingId(messageToDelete.id)
 
     try {
-      await deleteMessage(message.id)
+      await deleteMessage(messageToDelete.id)
+      setMessageToDelete(null)
     } finally {
       setDeletingId('')
     }
@@ -265,7 +273,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
               Mensagens
             </Typography>
             <Typography color="text.secondary">
-              Envie ou agende mensagens fake para contatos de {connection.name}.
+              Envie ou agende mensagens para contatos da conexão - {connection.name}.
             </Typography>
           </Box>
 
@@ -318,15 +326,12 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
         ) : null}
 
         {!loading && filteredMessages.length === 0 ? (
-          <Box className="mt-6 rounded border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <MessageIcon color="primary" fontSize="large" />
-            <Typography component="p" variant="h6" className="mt-3">
-              Nenhuma mensagem encontrada
-            </Typography>
-            <Typography color="text.secondary" className="mx-auto mt-1 max-w-md">
-              Crie uma mensagem imediata ou agendada para os contatos selecionados.
-            </Typography>
-          </Box>
+          <EmptyState
+            className="mt-6"
+            description="Crie uma mensagem imediata ou agendada para os contatos selecionados."
+            icon={<MessageIcon color="primary" fontSize="large" />}
+            title="Nenhuma mensagem encontrada"
+          />
         ) : null}
 
         {filteredMessages.length > 0 ? (
@@ -338,6 +343,11 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
               >
                 <Stack spacing={1}>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography color="text.secondary" variant="body2">
+                      {message.status === 'sent'
+                        ? formatTimestamp(message.sentAt)
+                        : formatTimestamp(message.scheduledAt)}
+                    </Typography>
                     <Chip
                       color={message.status === 'sent' ? 'success' : 'warning'}
                       icon={
@@ -346,11 +356,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
                       label={message.status === 'sent' ? 'Enviada' : 'Agendada'}
                       size="small"
                     />
-                    <Typography color="text.secondary" variant="body2">
-                      {message.status === 'sent'
-                        ? formatTimestamp(message.sentAt)
-                        : formatTimestamp(message.scheduledAt)}
-                    </Typography>
+
                   </Stack>
                   <Typography className="max-w-3xl whitespace-pre-wrap">
                     {message.text}
@@ -377,7 +383,7 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
                       aria-label="Excluir mensagem"
                       color="error"
                       disabled={deletingId === message.id}
-                      onClick={() => void handleDelete(message)}
+                      onClick={() => setMessageToDelete(message)}
                     >
                       {deletingId === message.id ? (
                         <CircularProgress color="inherit" size={20} />
@@ -470,6 +476,15 @@ export function MessagesSection({ connection, userId }: MessagesSectionProps) {
           </DialogActions>
         </Stack>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        description="A mensagem será excluída permanentemente. Essa ação não pode ser desfeita."
+        loading={Boolean(messageToDelete && deletingId === messageToDelete.id)}
+        onClose={closeDeleteDialog}
+        onConfirm={() => void handleDelete()}
+        open={Boolean(messageToDelete)}
+        title="Excluir mensagem"
+      />
     </Paper>
   )
 }

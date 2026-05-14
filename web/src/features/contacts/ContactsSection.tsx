@@ -22,6 +22,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import { ConfirmDeleteDialog } from '../../components/ConfirmDeleteDialog'
+import { EmptyState } from '../../components/EmptyState'
 import type { Contact } from '../../types/contact'
 import type { Connection } from '../../types/connection'
 import { useContacts } from './useContacts'
@@ -53,6 +55,7 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
 
   const isDialogOpen = Boolean(dialogState)
   const dialogTitle = dialogState?.mode === 'edit' ? 'Editar contato' : 'Novo contato'
@@ -122,19 +125,24 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
     }
   }
 
-  async function handleDelete(contact: Contact) {
-    const shouldDelete = window.confirm(
-      `Excluir o contato "${contact.name}"? Essa ação não pode ser desfeita.`,
-    )
-
-    if (!shouldDelete) {
+  function closeDeleteDialog() {
+    if (deletingId) {
       return
     }
 
-    setDeletingId(contact.id)
+    setContactToDelete(null)
+  }
+
+  async function handleDelete() {
+    if (!contactToDelete) {
+      return
+    }
+
+    setDeletingId(contactToDelete.id)
 
     try {
-      await deleteContact(contact.id)
+      await deleteContact(contactToDelete.id)
+      setContactToDelete(null)
     } finally {
       setDeletingId('')
     }
@@ -175,15 +183,12 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
         ) : null}
 
         {!loading && contacts.length === 0 ? (
-          <Box className="mt-6 rounded border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <PersonAddIcon color="primary" fontSize="large" />
-            <Typography component="p" variant="h6" className="mt-3">
-              Nenhum contato cadastrado
-            </Typography>
-            <Typography color="text.secondary" className="mx-auto mt-1 max-w-md">
-              Cadastre contatos para depois selecionar destinatários nas mensagens.
-            </Typography>
-          </Box>
+          <EmptyState
+            className="mt-6"
+            description="Adicione contatos para selecionar destinatários nas mensagens."
+            icon={<PersonAddIcon color="primary" fontSize="large" />}
+            title="Nenhum contato cadastrado"
+          />
         ) : null}
 
         {contacts.length > 0 ? (
@@ -226,7 +231,7 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
                       aria-label={`Excluir ${contact.name}`}
                       color="error"
                       disabled={deletingId === contact.id}
-                      onClick={() => void handleDelete(contact)}
+                      onClick={() => setContactToDelete(contact)}
                     >
                       {deletingId === contact.id ? (
                         <CircularProgress color="inherit" size={20} />
@@ -276,6 +281,19 @@ export function ContactsSection({ connection, userId }: ContactsSectionProps) {
           </DialogActions>
         </Stack>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        description={
+          contactToDelete
+            ? `O contato "${contactToDelete.name}" será excluído permanentemente. Essa ação não pode ser desfeita.`
+            : ''
+        }
+        loading={Boolean(contactToDelete && deletingId === contactToDelete.id)}
+        onClose={closeDeleteDialog}
+        onConfirm={() => void handleDelete()}
+        open={Boolean(contactToDelete)}
+        title="Excluir contato"
+      />
     </Paper>
   )
 }

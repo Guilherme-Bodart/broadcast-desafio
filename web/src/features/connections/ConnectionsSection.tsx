@@ -22,6 +22,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import { ConfirmDeleteDialog } from '../../components/ConfirmDeleteDialog'
+import { EmptyState } from '../../components/EmptyState'
 import type { Connection } from '../../types/connection'
 import { useConnections } from './useConnections'
 
@@ -73,6 +75,7 @@ export function ConnectionsSection({
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const [connectionToDelete, setConnectionToDelete] = useState<Connection | null>(null)
 
   const isDialogOpen = Boolean(dialogState)
   const dialogTitle =
@@ -147,19 +150,24 @@ export function ConnectionsSection({
     }
   }
 
-  async function handleDelete(connection: Connection) {
-    const shouldDelete = window.confirm(
-      `Excluir a conexão "${connection.name}"? Essa ação não pode ser desfeita.`,
-    )
-
-    if (!shouldDelete) {
+  function closeDeleteDialog() {
+    if (deletingId) {
       return
     }
 
-    setDeletingId(connection.id)
+    setConnectionToDelete(null)
+  }
+
+  async function handleDelete() {
+    if (!connectionToDelete) {
+      return
+    }
+
+    setDeletingId(connectionToDelete.id)
 
     try {
-      await deleteConnection(connection.id)
+      await deleteConnection(connectionToDelete.id)
+      setConnectionToDelete(null)
     } finally {
       setDeletingId('')
     }
@@ -200,15 +208,12 @@ export function ConnectionsSection({
         ) : null}
 
         {!loading && connections.length === 0 ? (
-          <Box className="mt-6 rounded border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <WifiTetheringIcon color="primary" fontSize="large" />
-            <Typography component="p" variant="h6" className="mt-3">
-              Nenhuma conexão cadastrada
-            </Typography>
-            <Typography color="text.secondary" className="mx-auto mt-1 max-w-md">
-              Crie a primeira conexão para depois vincular contatos e mensagens.
-            </Typography>
-          </Box>
+          <EmptyState
+            className="mt-6"
+            description="Crie uma conexão para organizar contatos e mensagens."
+            icon={<WifiTetheringIcon color="primary" fontSize="large" />}
+            title="Nenhuma conexão cadastrada"
+          />
         ) : null}
 
         {connections.length > 0 ? (
@@ -263,7 +268,7 @@ export function ConnectionsSection({
                       disabled={deletingId === connection.id}
                       onClick={(event) => {
                         event.stopPropagation()
-                        void handleDelete(connection)
+                        setConnectionToDelete(connection)
                       }}
                     >
                       {deletingId === connection.id ? (
@@ -306,6 +311,19 @@ export function ConnectionsSection({
           </DialogActions>
         </Stack>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        description={
+          connectionToDelete
+            ? `A conexão "${connectionToDelete.name}" será excluída permanentemente. Essa ação não pode ser desfeita.`
+            : ''
+        }
+        loading={Boolean(connectionToDelete && deletingId === connectionToDelete.id)}
+        onClose={closeDeleteDialog}
+        onConfirm={() => void handleDelete()}
+        open={Boolean(connectionToDelete)}
+        title="Excluir conexão"
+      />
     </Paper>
   )
 }

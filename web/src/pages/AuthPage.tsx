@@ -65,6 +65,7 @@ function getAuthErrorMessage(error: unknown) {
 
 export function AuthPage({ mode }: AuthPageProps) {
   const { loading, signIn, signUp, user } = useAuth()
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState('')
@@ -91,7 +92,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         return
       }
 
-      await signUp(email, password)
+      await signUp(name.trim(), email, password)
       navigate('/', { replace: true })
     } catch (error) {
       setFormError(getAuthErrorMessage(error))
@@ -118,9 +119,20 @@ export function AuthPage({ mode }: AuthPageProps) {
             {formError ? <Alert severity="error">{formError}</Alert> : null}
 
             <Stack component="form" onSubmit={handleSubmit} spacing={2}>
+              {mode === 'signup' ? (
+                <TextField
+                  autoComplete="name"
+                  autoFocus
+                  fullWidth
+                  label="Nome"
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  value={name}
+                />
+              ) : null}
               <TextField
                 autoComplete="email"
-                autoFocus
+                autoFocus={mode === 'login'}
                 fullWidth
                 label="E-mail"
                 onChange={(event) => setEmail(event.target.value)}
